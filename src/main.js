@@ -2,24 +2,24 @@
  * my plista prize server
  *
  * with the most ridiculous algorithm, I guess
+ *
+ *
+ * items are just plain objects right now, as is everything else.
+ *
  */
 
 var
 	http = require('http');
 	version = 0.1,
-	config = require(__dirname + '/config.js');
+	config = require(__dirname + '/config.js'),
+	app = require(__dirname + '/lib/app.js');
 
 config.port = config.port || 1239;
 
 
 http.createServer(function (request, response) {
 
-	var items = [], error, i;
-	for (i = 0; i < 3; i += 1) {
-		items.push({
-			id : Math.floor(Math.random() * 1000000)
-		});
-	}
+	var error;
 
 	if (request.method !== 'GET' && request.method !== 'POST') {
 		error = 'm' + new Array(Math.floor(Math.random() * 40)).join('o');
@@ -43,7 +43,7 @@ http.createServer(function (request, response) {
 		team: {
 			id: 1
 		},
-		items: items,
+		items: app.getRecommendations(1, 1, 1),
 		version: 0.1
 	}));
 
