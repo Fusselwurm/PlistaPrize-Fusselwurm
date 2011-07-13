@@ -1,8 +1,8 @@
 
-var redis = require('redis');
+//var redis = require('redis');
 
 exports.addItem = function (item) {
-	redis.hset('item:' + item.item_id, item);
+//	redis.hset('item:' + item.item_id, item);
 };
 
 exports.getRecommendations = function (user, ctxItem, count) {

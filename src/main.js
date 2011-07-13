@@ -12,7 +12,9 @@ var
 	http = require('http');
 	version = 0.1,
 	config = require(__dirname + '/config.js'),
-	app = require(__dirname + '/lib/app.js');
+	app = require(__dirname + '/lib/app.js'),
+	log = require(__dirname + '/lib/log.js'),
+	logger = log.getLogger('main');
 
 config.port = config.port || 1239;
 
@@ -20,6 +22,8 @@ config.port = config.port || 1239;
 http.createServer(function (request, response) {
 
 	var error;
+
+	logger.trace('got request ' + request);
 
 	if (request.method !== 'GET' && request.method !== 'POST') {
 		error = 'm' + new Array(Math.floor(Math.random() * 40)).join('o');
@@ -30,6 +34,7 @@ http.createServer(function (request, response) {
 	}
 
 	if (error) {
+		logger.warn('error: ' + error);
 		response.end(JSON.stringify({
 			error: error,
 			code: 0,
@@ -48,8 +53,6 @@ http.createServer(function (request, response) {
 	}));
 
 
-}).listen(config.port)
+}).listen(config.port);
 
-
-
-
+logger.info('server listening at port ' + config.port);
