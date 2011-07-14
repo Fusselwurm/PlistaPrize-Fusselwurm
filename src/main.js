@@ -21,7 +21,9 @@ config.port = config.port || 1239;
 
 http.createServer(function (request, response) {
 
-	var error;
+	var error, status = 200, req = {
+		content: ''
+	};
 
 	logger.trace('got request ' + request);
 
@@ -29,28 +31,46 @@ http.createServer(function (request, response) {
 		error = 'm' + new Array(Math.floor(Math.random() * 40)).join('o');
 	}
 
-	if (!request.headers.post) {
-		error = 'POST me some data, pleeez';
-	}
+	request.on("data", function(chunk) {
+		req.content += chunk;
+	});
 
-	if (error) {
-		logger.warn('error: ' + error);
+	request.on("end", function() {
+
+		if (!req.content) {
+			status = 400;
+			error = 'POST me some data, pleeez (sending ' + status + ')';
+
+		} else {
+			status = 200;
+			console.log(require('querystring').parse(req.content));
+		}
+
+
+		response.writeHead(status, {
+			  'Content-Type': 'application/json'
+		});
+
+		if (error) {
+			logger.warn('error: ' + error);
+			response.end(JSON.stringify({
+				error: error,
+				code: 0,
+				version: version
+			}));
+			return;
+		}
+
 		response.end(JSON.stringify({
-			error: error,
-			code: 0,
-			version: version
+			msg: "results",
+			team: {
+				id: 1
+			},
+			items: app.getRecommendations(1, 1, 1),
+			version: 0.1
 		}));
-		return;
-	}
 
-	response.end(JSON.stringify({
-		msg: "results",
-		team: {
-			id: 1
-		},
-		items: app.getRecommendations(1, 1, 1),
-		version: 0.1
-	}));
+	});
 
 
 }).listen(config.port);

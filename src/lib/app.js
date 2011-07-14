@@ -6,7 +6,7 @@ exports.addItem = function (item) {
 };
 
 exports.getRecommendations = function (user, ctxItem, count) {
-	var i, items;
+	var i, items = [];
 	for (i = 0; i < 3; i += 1) {
 		items.push({
 			id : Math.floor(Math.random() * 1000000)

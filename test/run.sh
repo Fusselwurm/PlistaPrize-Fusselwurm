@@ -1,3 +1,5 @@
 #!/bin/bash
-node ../jasmine-node/bin/jasmine-node  -i test test
+JASMINEBIN="`dirname $0`/../../jasmine-node/bin/jasmine-node"
+echo $JASMINEBIN
+node $JASMINEBIN  .
 
