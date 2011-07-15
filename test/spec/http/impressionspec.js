@@ -18,32 +18,101 @@ var
 */
 
 describe('post', function () {
-        it('post empty', function () {
+	it('POST empty', function () {
 
-			var gotResponse = false,
-				gotOk = false;
+		var gotOk = false;
 
-			runs(function () {
-				var r = http.request({
-					method: 'POST',
-					host: 'localhost',
-					path: '/',
-					port: 1239
-				}, function (response) {
-					expect(response.statusCode).toBe(400);
-					gotOk = true;
-				});
-
-				r.write('');
-				r.end();
+		runs(function () {
+			var r = http.request({
+				method: 'POST',
+				host: 'localhost',
+				path: '/',
+				port: 1239
+			}, function (response) {
+				expect(response.statusCode).toBe(400);
+				gotOk = true;
 			});
 
-			waits(500);
-
-			runs(function () {
-				expect(gotOk).toBe(true);
-			});
+			r.write('');
+			r.end();
 		});
+
+		waits(500);
+
+		runs(function () {
+			expect(gotOk).toBe(true);
+		});
+	});
+
+	it('JSON broken', function () {
+
+		var gotOk = false;
+
+		runs(function () {
+			var r = http.request({
+				method: 'POST',
+				host: 'localhost',
+				path: '/',
+				port: 1239
+			}, function (response) {
+				expect(response.statusCode).toBe(400);
+				gotOk = true;
+			});
+
+			r.write('mooohaha :D I b0rk yO"""!');
+			r.end();
+		});
+
+		waits(500);
+
+		runs(function () {
+			expect(gotOk).toBe(true);
+		});
+	});
+
+	it('data incomplete', function () {
+
+		   var gotOk = false;
+
+		   runs(function () {
+			   var r = http.request({
+				   method: 'POST',
+				   host: 'localhost',
+				   path: '/',
+				   port: 1239
+			   }, function (response) {
+				   expect(response.statusCode).toBe(400);
+				   gotOk = true;
+			   });
+
+			   r.write(JSON.stringify({
+					"msg":"impression",
+					"id": 1,
+					"client":{
+						"id": 1234
+					},
+					"item":{
+
+					},
+					"context":{
+						"category":{
+						}
+					},
+					"config":{
+						"timeout": 50.0,
+						"recommend": true,
+						"limit": 2
+					}
+				}));
+			   r.end();
+		   });
+
+		   waits(500);
+
+		   runs(function () {
+			   expect(gotOk).toBe(true);
+		   });
+	   });
 
 
 	it('post impression', function () {
