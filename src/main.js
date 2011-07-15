@@ -79,7 +79,7 @@ http.createServer(function (request, response) {
 					responseObj = {
 						msg: "results",
 						team: {
-							id: 1
+							id: requestObj.config.team.id
 						},
 						items: recommender.getRecommendations(users.getUser(requestObj.client.id), requestObj.item ? requestObj.item.id : null, requestObj.config.count),
 						version: 0.1
