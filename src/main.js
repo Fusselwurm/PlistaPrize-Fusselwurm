@@ -39,7 +39,7 @@ http.createServer(function (request, response) {
 
 	request.on("end", function() {
 
-		var requestObj, responseObj;
+		var requestObj, responseObj, teamID;
 
 		if (!req.content) {
 			status = 400;
