@@ -84,9 +84,11 @@ http.createServer(function (request, response) {
 						items: recommender.getRecommendations(users.getUser(requestObj.client.id), requestObj.item ? requestObj.item.id : null, requestObj.config.count),
 						version: 0.1
 					};
-					logger.debug('recommending items ' + responseObj.items.reduce(function (prev, cur) {
-						return prev + ', ' + cur.id + ': ' + cur.url;
-					}, ''));
+
+					logger.trace('recommending items ' + responseObj.items.map(function (i) {
+						return i.id
+					}).join(','));
+
 				} else {
 					responseObj = null;
 				}
@@ -105,3 +107,7 @@ http.createServer(function (request, response) {
 }).listen(config.port);
 
 logger.info('server listening at port ' + config.port);
+
+
+
+recommender.setItemStorage(itemstorage);

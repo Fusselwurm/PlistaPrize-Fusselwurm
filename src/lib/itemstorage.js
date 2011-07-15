@@ -3,7 +3,6 @@ var
 	items = {},
 	itemIDs = [];
 
-
 exports.addItem = function (item) {
 	var id = item.id;
 	if (!items[id]) {
@@ -17,7 +16,7 @@ exports.getItem = function (id) {
 	return items[id];
 };
 
-exports.latest = function (number) {
+exports.getLatest = function (number) {
 	return itemIDs.slice(- number).map(function (id) {
 		return items[id];
 	});
