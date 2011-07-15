@@ -70,8 +70,10 @@ http.createServer(function (request, response) {
 				responseObj = null;
 				break;
 			case 'impression':
-				itemstorage.addItem(requestObj.item);
 
+				if (requestObj.item) {
+					itemstorage.addItem(requestObj.item);
+				}
 
 				if (requestObj.config.recommend) {
 					responseObj = {
@@ -79,7 +81,7 @@ http.createServer(function (request, response) {
 						team: {
 							id: 1
 						},
-						items: recommender.getRecommendations(users.getUser(requestObj.client.id), requestObj.item.id, requestObj.config.count),
+						items: recommender.getRecommendations(users.getUser(requestObj.client.id), requestObj.item ? requestObj.item.id : null, requestObj.config.count),
 						version: 0.1
 					};
 					logger.debug('recommending items ' + responseObj.items.reduce(function (prev, cur) {
