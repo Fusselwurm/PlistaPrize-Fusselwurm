@@ -10,9 +10,11 @@
 
 var
 	http = require('http');
-	version = 0.1,
+	version = 0.15,
 	config = require(__dirname + '/config.js'),
-	app = require(__dirname + '/lib/app.js'),
+	itemstorage = require(__dirname + '/lib/itemstorage.js'),
+	recommender = require(__dirname + '/lib/recommender.js'),
+	users = require(__dirname + '/lib/users.js'),
 	log = require(__dirname + '/lib/log.js'),
 	logger = log.getLogger('main');
 
@@ -37,13 +39,15 @@ http.createServer(function (request, response) {
 
 	request.on("end", function() {
 
+		var requestObj, responseObj;
+
 		if (!req.content) {
 			status = 400;
 			error = 'POST me some data, pleeez (sending ' + status + ')';
 
 		} else {
 			status = 200;
-			console.log(require('querystring').parse(req.content));
+			requestObj = JSON.parse(req.content);
 		}
 
 
@@ -61,14 +65,37 @@ http.createServer(function (request, response) {
 			return;
 		}
 
-		response.end(JSON.stringify({
-			msg: "results",
-			team: {
-				id: 1
-			},
-			items: app.getRecommendations(1, 1, 1),
-			version: 0.1
-		}));
+		switch (requestObj.msg) {
+			case 'feedback':
+				responseObj = null;
+				break;
+			case 'impression':
+				itemstorage.addItem(requestObj.item);
+
+
+				if (requestObj.config.recommend) {
+					responseObj = {
+						msg: "results",
+						team: {
+							id: 1
+						},
+						items: recommender.getRecommendations(users.getUser(requestObj.client.id), requestObj.item.id, requestObj.config.count),
+						version: 0.1
+					};
+					logger.debug('recommending items ' + responseObj.items.reduce(function (prev, cur) {
+						return prev + ', ' + cur.id + ': ' + cur.url;
+					}, ''));
+				} else {
+					responseObj = null;
+				}
+				break;
+
+			case 'error':
+			default: logger.warn('strange request: ' + requestObj.msg);
+		}
+
+
+		response.end(JSON.stringify(responseObj));
 
 	});
 

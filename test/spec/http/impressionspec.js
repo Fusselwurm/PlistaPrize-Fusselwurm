@@ -1,15 +1,21 @@
 
-var http = require('http'),
-      serialize = function(obj, prefix) {
-                var str = [];
-                for(var p in obj) {
-                        var k = prefix ? prefix + "[" + p + "]" : p, v = obj[p];
-                        str.push(typeof v == "object" ?
-                                serialize(v, k) :
-                                encodeURIComponent(k) + "=" + encodeURIComponent(v));
-                }
-                return str.join("&");
-        };
+var
+	http = require('http');
+/*
+	validResponse = {
+		"msg":"results",
+		"team":{
+			"id":< team_id:int >
+		},
+		"items":[
+			{
+				"id":< item_id:string >
+			},
+			...
+		],
+		"version":< version_string:string >
+		}
+*/
 
 describe('post', function () {
         it('post empty', function () {
@@ -81,17 +87,33 @@ describe('post', function () {
 					path: '/',
 					port: 1239
 				}, function (response) {
-					expect(response.statusCode).toBe(200);
-					gotOk = true;
-				}),
-				body = '?'  + serialize(requestPost);
+					var body = '';
+					response.on('data', function (chunk) {
+						body += chunk;
+					});
+					response.on('end', function () {
+						var
+							result = JSON.parse(body);
 
-		console.log(body);
+						expect(result.msg).toBe('results');
+						expect(result.team.id).toBeDefined();
+						expect(result.version).toBeDefined();
+						expect(result.items).toBeDefined();
+						expect(result.items.length > 0).toBe(true);
+						expect(result.items[0].id).toBeDefined();
+
+					});
+					expect(response.statusCode).toBe(200);
+				}),
+				body = JSON.stringify(requestPost);
+
 			r.write(body);
 			r.end();
 		});
 
 		waits(500);
+
+
 
 	});
 });
