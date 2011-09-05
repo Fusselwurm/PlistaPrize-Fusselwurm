@@ -91,7 +91,15 @@ http.createServer(function (request, response) {
 							team: {
 								id: teamID
 							},
-							items: recommender.getRecommendations(users.getUser(requestObj.client.id), requestObj.item ? requestObj.item.id : null, requestObj.config.count),
+							items: recommender.getRecommendations(
+								users.getUser(requestObj.client.id),
+								requestObj.item ? requestObj.item.id : null,
+								requestObj.config.count
+							).map(function (item) {
+								return {
+									id: item.id
+								};
+							}),
 							version: version
 						};
 
