@@ -57,13 +57,7 @@ http.createServer(function (request, response) {
 
 			if (!error) {
 				teamID = requestObj.config && requestObj.config.team ? requestObj.config.team.id : 0;
-				if (!teamID) {
-					logger.info('Hey! Where\'s my Team ID ??? (request was: ' + reqBody + ')');
-				}
 			}
-
-
-
 
 			if (error) {
 				logger.warn('error: ' + error);
