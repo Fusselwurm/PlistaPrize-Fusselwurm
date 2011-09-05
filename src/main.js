@@ -74,6 +74,11 @@ http.createServer(function (request, response) {
 				return;
 			}
 
+			// workaround until the contest API has been fixed
+			if (requestObj.error) {
+				requestObj.msg = 'error';
+			}
+
 			switch (requestObj.msg) {
 				case 'feedback':
 					responseObj = null;
