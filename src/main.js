@@ -10,7 +10,7 @@
 
 var
 	http = require('http');
-	version = '0.2',
+	version = '1.0', // current contest API version ^^
 	config = require(__dirname + '/config.js'),
 	itemstorage = require(__dirname + '/lib/itemstorage.js'),
 	recommender = require(__dirname + '/lib/recommender.js'),
