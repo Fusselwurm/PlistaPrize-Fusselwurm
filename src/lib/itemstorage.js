@@ -16,6 +16,11 @@ exports.getItem = function (id) {
 	return items[id];
 };
 
+/**
+ *
+ * @param number
+ * @return Array
+ */
 exports.getLatest = function (number) {
 	return itemIDs.slice(- number).map(function (id) {
 		return items[id];

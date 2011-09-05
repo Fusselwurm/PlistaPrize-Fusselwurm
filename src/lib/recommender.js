@@ -1,4 +1,6 @@
-var itemStorage, user;
+var itemStorage, user,
+	log = require(__dirname + '/log.js'),
+	logger = log.getLogger('recommender');
 
 /**
  * required
@@ -24,5 +26,6 @@ exports.getRecommendations = function (user, ctxItem, count) {
 		}
 	}
 
+	logger.debug('i could recommend ' + items.length + ' items, but i should only send ' + count);
 	return items.slice(0, count);
 };
