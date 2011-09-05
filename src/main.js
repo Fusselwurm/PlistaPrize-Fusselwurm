@@ -65,7 +65,7 @@ http.createServer(function (request, response) {
 					error: error,
 					code: 0,
 					version: version
-				});
+				}) || '';
 				response.writeHead(status, {
 					'Content-Type': 'application/json',
 					'Content-Length': responseBody.length
@@ -117,7 +117,7 @@ http.createServer(function (request, response) {
 			status = 500;
 		}
 
-		responseBody = JSON.stringify(responseObj);
+		responseBody = JSON.stringify(responseObj) || '';
 		response.writeHead(status, {
 			'Content-Type': 'application/json',
 			'Content-Length': responseBody.length
