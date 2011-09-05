@@ -58,8 +58,7 @@ http.createServer(function (request, response) {
 			if (!error) {
 				teamID = requestObj.config && requestObj.config.team ? requestObj.config.team.id : 0;
 				if (!teamID) {
-					error = 'Hey! Where\'s my Team ID ???';
-					status = 400;
+					logger.info('Hey! Where\'s my Team ID ??? (request was: ' + reqBody + ')');
 				}
 			}
 
