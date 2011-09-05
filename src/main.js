@@ -23,7 +23,7 @@ config.port = config.port || 1239;
 
 http.createServer(function (request, response) {
 
-	var error, status = 200, reqBody = '';
+	var error, status = 200, reqBody = '', responseBody;
 
 	if (request.method !== 'GET' && request.method !== 'POST') {
 		error = 'm' + new Array(Math.floor(Math.random() * 40)).join('o');
@@ -63,17 +63,20 @@ http.createServer(function (request, response) {
 			}
 
 
-			response.writeHead(status, {
-				  'Content-Type': 'application/json'
-			});
+
 
 			if (error) {
 				logger.warn('error: ' + error);
-				response.end(JSON.stringify({
+				responseBody = JSON.stringify({
 					error: error,
 					code: 0,
 					version: version
-				}));
+				});
+				response.writeHead(status, {
+					'Content-Type': 'application/json',
+					'Content-Length': responseBody.length
+				});
+				response.end(responseBody);
 				return;
 			}
 
@@ -120,8 +123,12 @@ http.createServer(function (request, response) {
 			status = 500;
 		}
 
-
-		response.end(JSON.stringify(responseObj));
+		responseBody = JSON.stringify(responseObj);
+		response.writeHead(status, {
+			'Content-Type': 'application/json',
+			'Content-Length': responseBody.length
+		});
+		response.end(responseBody);
 
 
 
