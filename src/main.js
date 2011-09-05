@@ -87,7 +87,7 @@ http.createServer(function (request, response) {
 
 					if (requestObj.config.recommend) {
 						responseObj = {
-							msg: "results",
+							msg: "result",
 							team: {
 								id: teamID
 							},
