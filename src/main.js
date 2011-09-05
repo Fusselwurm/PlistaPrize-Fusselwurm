@@ -10,7 +10,7 @@
 
 var
 	http = require('http');
-	version = 0.15,
+	version = '0.2',
 	config = require(__dirname + '/config.js'),
 	itemstorage = require(__dirname + '/lib/itemstorage.js'),
 	recommender = require(__dirname + '/lib/recommender.js'),
@@ -92,7 +92,7 @@ http.createServer(function (request, response) {
 								id: teamID
 							},
 							items: recommender.getRecommendations(users.getUser(requestObj.client.id), requestObj.item ? requestObj.item.id : null, requestObj.config.count),
-							version: 0.1
+							version: version
 						};
 
 						logger.trace('recommending items ' + responseObj.items.map(function (i) {
