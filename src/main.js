@@ -108,6 +108,8 @@ http.createServer(function (request, response) {
 					break;
 
 				case 'error':
+					logger.info('received "error" request: ' + requestObj.msg);
+					break;
 				default: logger.warn('strange request: ' + requestObj.msg);
 			}
 
