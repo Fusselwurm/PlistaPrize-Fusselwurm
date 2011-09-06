@@ -1,6 +1,7 @@
-var itemStorage, user,
-	log = require(__dirname + '/log.js'),
-	logger = log.getLogger('recommender');
+var itemStorage,
+	logger = require(__dirname + '/log.js').getLogger('recommender');
+
+logger.setLevel('debug');
 
 /**
  * required
