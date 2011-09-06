@@ -1,3 +1,5 @@
+/*global require, __dirname*/
+
 /**
  * my plista prize server
  *
@@ -9,7 +11,7 @@
  */
 
 var
-	http = require('http');
+	http = require('http'),
 	version = '1.0', // current contest API version ^^
 	config = require(__dirname + '/config.js'),
 	itemstorage = require(__dirname + '/lib/itemstorage.js'),
@@ -35,8 +37,7 @@ http.createServer(function (request, response) {
 
 	request.on("end", function() {
 
-		var requestObj, responseObj, teamID;
-
+		var requestObj, responseObj, teamID, user;
 
 		try {
 
@@ -49,7 +50,7 @@ http.createServer(function (request, response) {
 					requestObj = JSON.parse(reqBody);
 					status = 200;
 				} catch (e) {
-					error = 'POST data is not valid JSON';
+					error = 'POST data is not valid JSON: ' + (e.message || e);
 					status = 400;
 				}
 
@@ -89,6 +90,7 @@ http.createServer(function (request, response) {
 						itemstorage.addItem(requestObj.item);
 					}
 
+					user = users.getUser(requestObj.client.id);
 
 					if (requestObj.config.recommend) {
 						responseObj = {
@@ -97,7 +99,7 @@ http.createServer(function (request, response) {
 								id: teamID
 							},
 							items: recommender.getRecommendations(
-								users.getUser(requestObj.client.id),
+								user,
 								requestObj.item ? requestObj.item.id : null,
 								requestObj.config.count
 							).map(function (item) {
@@ -108,8 +110,12 @@ http.createServer(function (request, response) {
 							version: version
 						};
 
+						responseObj.items.forEach(function (i) {
+							user.sees(i.id);
+						});
+
 						logger.trace('recommending items ' + responseObj.items.map(function (i) {
-							return i.id
+							return i.id;
 						}).join(','));
 
 					} else {
@@ -124,8 +130,8 @@ http.createServer(function (request, response) {
 			}
 
 
-		} catch (e) {
-			logger.error('exception in request.end: ' + e.message + '\n' + e.stack);
+		} catch (f) {
+			logger.error('exception in request.end: ' + f.message + '\n' + f.stack);
 			error = 'internal server error, meh';
 			status = 500;
 		}
