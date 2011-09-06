@@ -101,7 +101,7 @@ http.createServer(function (request, response) {
 							items: recommender.getRecommendations(
 								user,
 								requestObj.item ? requestObj.item.id : null,
-								requestObj.config.count
+								requestObj.config.limit
 							).map(function (item) {
 								return {
 									id: item.id
