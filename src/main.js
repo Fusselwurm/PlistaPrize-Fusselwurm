@@ -37,7 +37,7 @@ http.createServer(function (request, response) {
 
 	request.on("end", function() {
 
-		var requestObj, responseObj, teamID, user;
+		var requestObj, responseObj, teamID, user, contentType;
 
 		try {
 
@@ -47,10 +47,15 @@ http.createServer(function (request, response) {
 
 			} else {
 				try {
+					contentType = request.headers["content-type"];
+					if (contentType && (contentType.indexOf("application/x-www-form-urlencoded") !== -1)) {
+						reqBody = decodeURIComponent(reqBody.trim());
+					}
+	
 					requestObj = JSON.parse(reqBody);
 					status = 200;
 				} catch (e) {
-					error = 'POST data is not valid JSON: ' + (e.message || e);
+					error = 'POST data is not valid JSON: ' + (e.message || e) + ':' + reqBody;
 					status = 400;
 				}
 

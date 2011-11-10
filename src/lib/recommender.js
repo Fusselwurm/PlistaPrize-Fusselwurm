@@ -27,6 +27,6 @@ exports.getRecommendations = function (user, ctxItem, count) {
 		}
 	}
 
-	logger.debug('i could recommend ' + items.length + ' items, but i should only send ' + count);
+	logger.debug('i could recommend ' + items.length + ' items, and i could send ' + count);
 	return items.slice(0, count);
 };
