@@ -3,6 +3,18 @@ var
     redis = require('redis-node');
 
 app.setRedis(redis);
+app.setLog({
+    getLogger: function () {
+        return {
+            trace: function () {},
+            debug: function () {},
+            info: function () {},
+            warn: function () {},
+            error: function () {},
+            fatal: function () {}
+        };
+    }
+});
 
 describe('item storage', function () {
 	it('stores items', function () {

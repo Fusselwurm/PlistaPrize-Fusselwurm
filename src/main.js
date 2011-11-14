@@ -26,6 +26,8 @@ itemstorage.setRedis(redis);
 itemstorage.setLog(log);
 
 
+
+
 http.createServer(
     function (request, response) {
 
@@ -183,3 +185,4 @@ logger.info('server listening at port ' + config.port);
 
 
 recommender.setItemStorage(itemstorage);
+setInterval(itemstorage.calculate, 10000);

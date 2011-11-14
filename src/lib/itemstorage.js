@@ -35,10 +35,11 @@ exports.getItem = function (id, fn) {
  * @return Array
  */
 exports.getLatest = function (number, fn) {
-    if (fn) {
-        fn('moo', []);
-    }
-
+    redis.zrange('items:most-visited', -20, -1, function (err, data) {
+        if (fn) {
+            fn('moo', data);
+        }
+    });
 };
 
 exports.addItemVisited = function (item) {
@@ -46,7 +47,7 @@ exports.addItemVisited = function (item) {
 };
 
 
-setInterval((function () {
+exports.calculate = (function () {
     var running = false;
     return function () {
         if (running) {
@@ -120,4 +121,4 @@ setInterval((function () {
         });
 
     };
-}()), 2000);
+}());
