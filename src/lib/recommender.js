@@ -14,7 +14,7 @@ exports.setItemStorage = function (o) {
 exports.getRecommendations = function (user, ctxItem, count, fn) {
 	var
 		items = itemStorage.getLatestIDs(count * 4, function (err, itemIDs) {
-			var tmp, recs, level
+			var tmp, recs, level;
 
 			if (err) {
 				logger.error('error ' + err);

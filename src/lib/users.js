@@ -10,10 +10,10 @@ var
 
 				},
 				hasSeen:function (itemID) {
-					return seens.indexOf(id) !== -1;
+					return seens.indexOf(itemID) !== -1;
 				},
 				hasVisited:function (itemID) {
-					return visited.indexOf(id) !== -1
+					return visited.indexOf(itemID) !== -1
 				},
 				sees:function (itemID) {
 					if (!this.hasSeen(itemID)) {

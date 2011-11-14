@@ -13,7 +13,7 @@ describe('recommender', function () {
 
 		recommender.setItemStorage({
 			items: items,
-			getLatestIDs: function (n) {
+			getLatestIDs: function () {
 				return this.items;
 			}
 		});

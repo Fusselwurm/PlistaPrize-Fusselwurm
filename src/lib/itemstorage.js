@@ -1,6 +1,5 @@
 var
 	redis,
-	itemIDs = [],
 	logger;
 
 exports.setRedis = function (o) {
@@ -44,6 +43,7 @@ exports.getLatestIDs = function (number, fn) {
 			fn(err, data.reverse());
 		}
 	});
+	return null;
 };
 
 exports.addItemVisited = function (item) {
