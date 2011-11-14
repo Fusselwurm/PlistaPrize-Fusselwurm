@@ -17,6 +17,9 @@ exports.setLog = function (o) {
 exports.addItem = function (item, fn) {
 	var id = item.id;
 	redis.sadd('item:ids', id);
+	if (item.recommendable) {
+		redis.sadd('items:recommendables', id);
+	}
 	redis.set('item:created-at_' + id, item.created_at);
 	redis.hmset('item_' + id, item, fn);
 };
@@ -67,7 +70,7 @@ exports.calculate = (function () {
 		 *
 		 **/
 
-		redis.smembers('item:ids', function (err, ids) {
+		redis.smembers('items:recommendables', function (err, ids) {
 			var
 				t = Math.floor((new Date()).getTime() / 1000),
 				nTodo;

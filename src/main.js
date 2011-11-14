@@ -148,8 +148,7 @@ http.createServer(
 							break;
 
 						case
-						'error'
-						:
+						'error' :
 							logger.warn('received "error" request, error code: ' + requestObj.code);
 							break;
 						default:
@@ -183,4 +182,7 @@ logger.info('server listening at port ' + config.port);
 
 
 recommender.setItemStorage(itemstorage);
+logger.info('initial item score calculation...');
+itemstorage.calculate();
+logger.info('...finished.');
 setInterval(itemstorage.calculate, 60000);
