@@ -19,7 +19,7 @@ var
     users = require(__dirname + '/lib/users.js'),
     log = require(__dirname + '/lib/log.js'),
     logger = log.getLogger('main'),
-    redis = require('redis-node');
+    redis = require('redis');
 
 config.port = config.port || 1239;
 itemstorage.setRedis(redis);

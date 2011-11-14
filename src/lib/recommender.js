@@ -1,7 +1,7 @@
 var itemStorage,
 	logger = require(__dirname + '/log.js').getLogger('recommender');
 
-logger.setLevel('debug');
+logger.setLevel('warn');
 
 /**
  * required
@@ -13,23 +13,27 @@ exports.setItemStorage = function (o) {
 
 exports.getRecommendations = function (user, ctxItem, count, fn) {
 	var
-		items = itemStorage.getLatest(count * 4, function (err, items) {
+		items = itemStorage.getLatestIDs(count * 4, function (err, itemsIDs) {
             var tmp;
 
-            items.sort(function (a, b) {
-                return user.hasSeen(a.id) - user.hasSeen(b.id);
+            itemsIDs.sort(function (a, b) {
+                return user.hasSeen(a) - user.hasSeen(b);
             });
 
             if (ctxItem) {
-                tmp  = items.indexOf(ctxItem);
+                tmp  = itemsIDs.indexOf(ctxItem);
                 if (tmp !== -1) {
-                    items.splice(tmp, 1);
+                    itemsIDs.splice(tmp, 1);
                 }
             }
 
-            logger.debug('i could recommend ' + items.length + ' items, and i could send ' + count);
+            logger.debug('i could recommend ' + itemsIDs.length + ' items, and i could send ' + count);
 
-            return fn(err, items.slice(0, count));
+            return fn(err, itemsIDs.slice(0, count).map(function (id) {
+                return {
+                    id: id
+                }
+            }));
         });
 };
 

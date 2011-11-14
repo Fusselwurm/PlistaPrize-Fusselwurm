@@ -10,6 +10,7 @@ exports.setRedis = function (o) {
 
 exports.setLog = function (o) {
     logger = o.getLogger('itemstorage');
+    logger.setLevel('warn');
 };
 
 
@@ -18,10 +19,7 @@ exports.addItem = function (item, fn) {
 	var id = item.id;
     redis.sadd('item:ids', id);
     redis.set('item:created-at_' + id, item.created_at);
-    redis.hmset('item_' + id, item);
-    if (fn) {
-        fn('no idea what happened to it ^^');
-    }
+    redis.hmset('item_' + id, item, fn);
 };
 
 exports.getItem = function (id, fn) {
@@ -34,10 +32,14 @@ exports.getItem = function (id, fn) {
  * @param number
  * @return Array
  */
-exports.getLatest = function (number, fn) {
+exports.getLatestIDs = function (number, fn) {
     redis.zrange('items:most-visited', -20, -1, function (err, data) {
+        data = data || [];
+        if (err) {
+            logger.error('error when getting sorted items: ' + err);
+        }
         if (fn) {
-            fn('moo', data);
+            fn(err, data);
         }
     });
 };
@@ -69,7 +71,14 @@ exports.calculate = (function () {
         redis.smembers('item:ids', function (err, ids) {
             var
                 t = Math.floor((new Date()).getTime() / 1000),
-                nTodo = ids.length;
+                nTodo;
+
+            if (err) {
+                logger.error ('error when getting item ids: ' + err);
+            }
+
+            ids = ids || [];
+            nTodo = ids.length;
 
             logger.debug('found ' + nTodo + ' ids for which to calculate mostvisited');
 
@@ -108,7 +117,7 @@ exports.calculate = (function () {
                     created_at = val;
                     trySetScore();
                 });
-                redis.get('item:created-at' + id, function (err, val) {
+                redis.get('item:visited_' + id, function (err, val) {
                     visitcount = val;
                     trySetScore();
                 });
