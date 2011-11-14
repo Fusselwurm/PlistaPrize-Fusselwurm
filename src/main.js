@@ -23,6 +23,7 @@ var
 
 config.port = config.port || 1239;
 itemstorage.setRedis(redis);
+itemstorage.setLog(log);
 
 
 http.createServer(
@@ -97,7 +98,7 @@ http.createServer(
 
                             if (requestObj.item) {
                                 itemstorage.addItem(requestObj.item);
-                                itemstorage.addItemSeen(requestObj.item);
+                                itemstorage.addItemVisited(requestObj.item);
                             }
 
                             user = users.getUser(requestObj.client.id, function (err, user) {
