@@ -19,7 +19,22 @@ var
 	users = require(__dirname + '/lib/users.js'),
 	log = require(__dirname + '/lib/log.js'),
 	logger = log.getLogger('main'),
-	redis = require('redis');
+	redis = require('redis'),
+	cleanup = function () {
+		var r = http.request({
+				method: 'POST',
+				hostname: 'contest.plista.com',
+				path:'/api/api.php'
+			}, function () {});
+
+		r.write(JSON.stringify({"version":"1.0", "msg":"stop","apikey":"970870d0cc0342f1e96290b3fba537ca"}));
+		r.end();
+		r.on('response', function (resp) {
+			resp.pipe(process.stdout);
+		});
+		process.exit(0);
+
+	};
 
 config.port = config.port || 1239;
 itemstorage.setRedis(redis);
@@ -186,3 +201,23 @@ logger.info('initial item score calculation...');
 itemstorage.calculate();
 logger.info('...finished.');
 setInterval(itemstorage.calculate, 60000);
+
+logger.info("sending start request to API server...");
+
+
+(function () {
+	var r = http.request({
+		method: 'POST',
+		hostname: 'contest.plista.com',
+		path:'/api/api.php'
+	}, function () {});
+	r.write(JSON.stringify({"version":"1.0", "msg":"start","apikey":"970870d0cc0342f1e96290b3fba537ca"}));
+	r.end();
+	r.on('response', function (resp) {
+		resp.pipe(process.stdout);
+	});
+}());
+
+
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
