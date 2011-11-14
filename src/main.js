@@ -113,16 +113,16 @@ http.createServer(
 										requestObj.config.limit, function (err, items) {
 											items.map(function (item) {
 												return {
-													id:item.id
+													id: item.id
 												};
 											});
 											responseObj = {
-												msg:"result",
-												team:{
-													id:teamID
+												msg: "result",
+												team: {
+													id: teamID
 												},
-												items:items,
-												version:version
+												items: items,
+												version: version
 											};
 
 											responseObj.items.forEach(function (i) {
@@ -183,4 +183,4 @@ logger.info('server listening at port ' + config.port);
 
 
 recommender.setItemStorage(itemstorage);
-setInterval(itemstorage.calculate, 10000);
+setInterval(itemstorage.calculate, 60000);

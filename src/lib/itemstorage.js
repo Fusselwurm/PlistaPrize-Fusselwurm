@@ -38,7 +38,7 @@ exports.getLatestIDs = function (number, fn) {
 			logger.error('error when getting sorted items: ' + err);
 		}
 		if (fn) {
-			fn(err, data);
+			fn(err, data.reverse());
 		}
 	});
 };
