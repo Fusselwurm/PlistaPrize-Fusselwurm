@@ -1,25 +1,24 @@
 var
-    redis,
+	redis,
 	itemIDs = [],
-    logger;
+	logger;
 
 exports.setRedis = function (o) {
-    redis = o.createClient();
-    redis.select(2);
+	redis = o.createClient();
+	redis.select(2);
 };
 
 exports.setLog = function (o) {
-    logger = o.getLogger('itemstorage');
-    logger.setLevel('warn');
+	logger = o.getLogger('itemstorage');
+	logger.setLevel('warn');
 };
-
 
 
 exports.addItem = function (item, fn) {
 	var id = item.id;
-    redis.sadd('item:ids', id);
-    redis.set('item:created-at_' + id, item.created_at);
-    redis.hmset('item_' + id, item, fn);
+	redis.sadd('item:ids', id);
+	redis.set('item:created-at_' + id, item.created_at);
+	redis.hmset('item_' + id, item, fn);
 };
 
 exports.getItem = function (id, fn) {
@@ -33,101 +32,101 @@ exports.getItem = function (id, fn) {
  * @return Array
  */
 exports.getLatestIDs = function (number, fn) {
-    redis.zrange('items:most-visited', -20, -1, function (err, data) {
-        data = data || [];
-        if (err) {
-            logger.error('error when getting sorted items: ' + err);
-        }
-        if (fn) {
-            fn(err, data);
-        }
-    });
+	redis.zrange('items:most-visited', -20, -1, function (err, data) {
+		data = data || [];
+		if (err) {
+			logger.error('error when getting sorted items: ' + err);
+		}
+		if (fn) {
+			fn(err, data);
+		}
+	});
 };
 
 exports.addItemVisited = function (item) {
-    redis.incr('item:visited_' + item.id);
+	redis.incr('item:visited_' + item.id);
 };
 
 
 exports.calculate = (function () {
-    var running = false;
-    return function () {
-        if (running) {
-            logger.info('aborting most visited calculation, its still running');
-            return;
-        }
-        logger.info('starting most visited calculation');
-        running = true;
-        // iteriere die liste der gesehenen items, und ermittele das "visited pro zeiteinheit"
-        // d.h. über alle 'item:visited_' und teile durch das entsprechende item:created_ - Alter
-        // und speichere in sorted set
-        /**
-         *  SMEMBERS('item:ids').forEach
-         *    score = GET('item:created-at_' + itemid) / GET('item:visited_' + itemid);
-         *    ZADD('items:most-visited', score, itemid);
-         *
-         **/
+	var running = false;
+	return function () {
+		if (running) {
+			logger.info('aborting most visited calculation, its still running');
+			return;
+		}
+		logger.info('starting most visited calculation');
+		running = true;
+		// iteriere die liste der gesehenen items, und ermittele das "visited pro zeiteinheit"
+		// d.h. über alle 'item:visited_' und teile durch das entsprechende item:created_ - Alter
+		// und speichere in sorted set
+		/**
+		 *  SMEMBERS('item:ids').forEach
+		 *	score = GET('item:created-at_' + itemid) / GET('item:visited_' + itemid);
+		 *	ZADD('items:most-visited', score, itemid);
+		 *
+		 **/
 
-        redis.smembers('item:ids', function (err, ids) {
-            var
-                t = Math.floor((new Date()).getTime() / 1000),
-                nTodo;
+		redis.smembers('item:ids', function (err, ids) {
+			var
+				t = Math.floor((new Date()).getTime() / 1000),
+				nTodo;
 
-            if (err) {
-                logger.error ('error when getting item ids: ' + err);
-            }
+			if (err) {
+				logger.error('error when getting item ids: ' + err);
+			}
 
-            ids = ids || [];
-            nTodo = ids.length;
+			ids = ids || [];
+			nTodo = ids.length;
 
-            logger.debug('found ' + nTodo + ' ids for which to calculate mostvisited');
+			logger.debug('found ' + nTodo + ' ids for which to calculate mostvisited');
 
-            ids.forEach(function (id) {
+			ids.forEach(function (id) {
 
-                var
-                    created_at,
-                    visitcount,
-                    trySetScore = function () {
-                        var score, dAge;
-
-
-                        if (typeof created_at === 'undefined' || typeof visitcount === 'undefined') {
-                            logger.trace('trySetScore miss (' + created_at + ', ' + visitcount);
-                            return;
-                        }
-
-                        dAge = (t - created_at) / 86400;
-                        if (dAge) {
-                            score = visitcount / (dAge * dAge);
-                        } else {
-                            score = 1;
-                        }
+				var
+					created_at,
+					visitcount,
+					trySetScore = function () {
+						var score, dAge;
 
 
-                        logger.debug('setting visited score for item ' + id + ' to ' + score);
-                        redis.zadd('items:most-visited', score, id);
-                        nTodo -= 1;
-                        if (!nTodo) {
-                            logger.trace('finished most-visited calculation round');
-                            running = false;
-                        }
-                    };
+						if (typeof created_at === 'undefined' || typeof visitcount === 'undefined') {
+							logger.trace('trySetScore miss (' + created_at + ', ' + visitcount);
+							return;
+						}
 
-                redis.get('item:created-at' + id, function (err, val) {
-                    created_at = val;
-                    trySetScore();
-                });
-                redis.get('item:visited_' + id, function (err, val) {
-                    visitcount = val;
-                    trySetScore();
-                });
-            });
+						dAge = (t - created_at) / 86400;
+						if (dAge) {
+							score = visitcount / (dAge * dAge);
+						} else {
+							score = 1;
+						}
 
-            if (!nTodo) {
-                logger.trace('finished most-visited calculation round');
-                running = false;
-            }
-        });
 
-    };
+						logger.debug('setting visited score for item ' + id + ' to ' + score);
+						redis.zadd('items:most-visited', score, id);
+						nTodo -= 1;
+						if (!nTodo) {
+							logger.trace('finished most-visited calculation round');
+							running = false;
+						}
+					};
+
+				redis.get('item:created-at' + id, function (err, val) {
+					created_at = val;
+					trySetScore();
+				});
+				redis.get('item:visited_' + id, function (err, val) {
+					visitcount = val;
+					trySetScore();
+				});
+			});
+
+			if (!nTodo) {
+				logger.trace('finished most-visited calculation round');
+				running = false;
+			}
+		});
+
+	};
 }());

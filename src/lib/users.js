@@ -2,29 +2,29 @@ var
 	users = {},
 	addUser = function (id, force) {
 		var seens = [],
-            visited = [];
+			visited = [];
 		if (force || !users[id]) {
 			users[id] = {
-				getID: function () {
+				getID:function () {
 					return id;
 
 				},
-				hasSeen: function (itemID) {
+				hasSeen:function (itemID) {
 					return seens.indexOf(id) !== -1;
 				},
-                hasVisited: function (itemID) {
-                    return visited.indexOf(id) !== -1
-                },
-				sees: function (itemID) {
-                    if (!this.hasSeen(itemID)) {
-                        seens.push(itemID);
-                    }
+				hasVisited:function (itemID) {
+					return visited.indexOf(id) !== -1
 				},
-                visits: function (itemID) {
-                    if (!this.hasVisited(itemID)) {
-                        visited.push(itemID);
-                    }
-                }
+				sees:function (itemID) {
+					if (!this.hasSeen(itemID)) {
+						seens.push(itemID);
+					}
+				},
+				visits:function (itemID) {
+					if (!this.hasVisited(itemID)) {
+						visited.push(itemID);
+					}
+				}
 			};
 		}
 
@@ -32,5 +32,5 @@ var
 	};
 
 exports.getUser = function (id, fn) {
-    return fn('', users[id] || addUser(id));
+	return fn('', users[id] || addUser(id));
 };

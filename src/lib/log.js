@@ -11,16 +11,16 @@ var
 		return function (message) {
 			var formatted;
 
-			if (levels.indexOf(logger.getLevel()) > level) {
+			if (levels.indexOf(logger.getLevel()) > levels.indexOf(level)) {
 				return;
 			}
 
 			formatted = (new Date()).toUTCString() + ' [' + level.toUpperCase() + '] ' + logger.getName() + ' : ' + message;
 
 			messages.push({
-				logger: logger,
-				level: level,
-				message: message
+				logger:logger,
+				level:level,
+				message:message
 			});
 
 			if (outFStream) {
@@ -32,13 +32,13 @@ var
 	newLogger = function (name) {
 		var
 			my = {
-				level: 'info'
+				level:'info'
 			},
 			logger = {
-				getName: function () {
+				getName:function () {
 					return name;
 				},
-				getMessages: function () {
+				getMessages:function () {
 					return messages.filter(function (m) {
 						return m.logger === logger
 					});
@@ -46,16 +46,16 @@ var
 				/**
 				 * return parent logger or null
 				 */
-				getParent: function () {
+				getParent:function () {
 					levels = name.split('.');
 					levels.shift();
 
 					return name ? (levels.length ? getLogger(levels.join('.')) : rootLogger) : null;
 				},
-				setLevel: function (level) {
+				setLevel:function (level) {
 					my.level = level;
 				},
-				getLevel: function () {
+				getLevel:function () {
 					return my.level;
 				}
 			};
