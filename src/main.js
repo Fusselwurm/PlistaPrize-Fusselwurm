@@ -36,6 +36,8 @@ var
 
 	};
 
+log.setOutfile('/tmp/plistaprize.log');
+
 config.port = config.port || 1239;
 itemstorage.setRedis(redis);
 itemstorage.setLog(log);
@@ -171,8 +173,6 @@ http.createServer(
 							error = 'Erm... yes. I dont really know what you want with "' + requestObj.msg + '", so Im just going to ignore you';
 							status = 400;
 					}
-
-
 				} catch (f) {
 					logger.error('exception in request.end: ' + f.message + '\n' + f.stack);
 					error = 'internal server error, meh';

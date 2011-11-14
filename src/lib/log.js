@@ -26,7 +26,12 @@ var
 			if (outFStream) {
 				outFStream.write(formatted + '\n');
 			}
-			console.log(formatted);
+			try {
+				console.log(formatted);
+			} catch (e) {
+				console.log('###HELP! COULDNT LOG SOMETHING###');
+			}
+
 		};
 	},
 	newLogger = function (name) {
