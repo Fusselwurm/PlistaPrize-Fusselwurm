@@ -29,7 +29,7 @@ var
 			try {
 				console.log(formatted);
 			} catch (e) {
-				console.log('###HELP! COULDNT LOG SOMETHING###');
+				process.exit(1);
 			}
 
 		};

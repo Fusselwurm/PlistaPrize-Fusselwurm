@@ -110,6 +110,14 @@ http.createServer(
 					switch (requestObj.msg) {
 						case 'feedback':
 							responseObj = null;
+							try {
+								if (requestObj.config.team.id) {
+									log.getLogger('main.interesting').info('I got a response :) ' + JSON.stringify(requestObj));
+								}
+							} catch (x) {
+								log.getLogger('main.interesting').info('someone else got a response :( ');
+							}
+
 							break;
 						case 'impression':
 
@@ -166,7 +174,7 @@ http.createServer(
 
 						case
 						'error' :
-							logger.warn('received "error" request, error code: ' + requestObj.code);
+							logger.warn('received "error" request: ' + requestObj.code + '( ' + requestObj.error + ' )');
 							break;
 						default:
 							logger.warn('strange request: ' + requestObj.msg);
@@ -174,7 +182,7 @@ http.createServer(
 							status = 400;
 					}
 				} catch (f) {
-					logger.error('exception in request.end: ' + f.message + '\n' + f.stack);
+					logger.error('exception in request.end: ' + f.message/* + '\n' + f.stack*/); // FIXME where do the exceptions come from.. grr..
 					error = 'internal server error, meh';
 					status = 500;
 				}
@@ -213,9 +221,9 @@ logger.info("sending start request to API server...");
 	}, function () {});
 	r.write(JSON.stringify({"version":"1.0", "msg":"start","apikey":"970870d0cc0342f1e96290b3fba537ca"}));
 	r.end();
-	r.on('response', function (resp) {
-		resp.pipe(process.stdout);
-	});
+	//r.on('response', function (resp) {
+//		resp.pipe(process.stdout);
+	//});
 }());
 
 
