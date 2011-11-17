@@ -19,7 +19,8 @@ exports.addItem = function (item, fn) {
 	if (item.recommendable) {
 		redis.sadd('items:recommendables', id);
 	}
-	redis.set('item:created-at_' + id, item.created_at);
+	redis.set('item:created-at_' + id, item.created || item.created_at || item.date);
+
 	redis.hmset('item_' + id, item, fn);
 };
 
