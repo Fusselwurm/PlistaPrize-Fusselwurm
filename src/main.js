@@ -21,22 +21,42 @@ var
 	logger = log.getLogger('main'),
 	redis = require('redis'),
 	cleanup = function () {
-		var r = http.request({
+		var request = http.request({
 				method: 'POST',
 				hostname: 'contest.plista.com',
 				path:'/api/api.php'
 			}, function () {});
 
-		r.write(JSON.stringify({"version":"1.0", "msg":"stop","apikey":"970870d0cc0342f1e96290b3fba537ca"}));
-		r.end();
-		r.on('response', function (resp) {
-			resp.pipe(process.stdout);
+		request.write(JSON.stringify({
+			version:"1.0",
+			msg:"stop",
+			apikey: config.apikey
+		}));
+		request.end();
+		request.on('response', function (resp) {
+
+			var body = '',
+				lvl = resp.statusCode > 200 ? 'error' : 'info';
+
+			resp.on("data", function (chunk) {
+				body += chunk;
+			});
+			resp.on('end', function () {
+				logger[lvl]('response: ' + resp.statusCode + ': ' + body);
+			});
 		});
 		process.exit(0);
 
 	};
 
 log.setOutfile('/tmp/plistaprize.log');
+
+if (!config.apikey) {
+	logger.fatal('missing apikey. please set the API key from within config.js (example: exports.apikey = "blah"; )');
+	process.exit(1);
+}
+
+
 
 config.port = config.port || 1239;
 itemstorage.setRedis(redis);
@@ -212,18 +232,31 @@ setInterval(itemstorage.calculate, 60000);
 
 logger.info("sending start request to API server...");
 
-
 (function () {
-	var r = http.request({
+	var request = http.request({
 		method: 'POST',
 		hostname: 'contest.plista.com',
 		path:'/api/api.php'
 	}, function () {});
-	r.write(JSON.stringify({"version":"1.0", "msg":"start","apikey":"970870d0cc0342f1e96290b3fba537ca"}));
-	r.end();
-	//r.on('response', function (resp) {
-//		resp.pipe(process.stdout);
-	//});
+	request.write(JSON.stringify({"version":"1.0", "msg":"start", "apikey": config.apikey}));
+
+
+	request.end();
+	request.on('response', function (resp) {
+
+		var body = '',
+			lvl = resp.statusCode > 200 ? 'error' : 'info';
+
+		resp.on("data", function (chunk) {
+			body += chunk;
+		});
+		resp.on('end', function () {
+			logger[lvl]('response: ' + resp.statusCode + ': ' + body);
+			if (lvl === 'error') {
+				process.exit(2);
+			}
+		});
+	});
 }());
 
 
