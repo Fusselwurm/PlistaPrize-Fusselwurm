@@ -1,2 +1,7 @@
-// example apikey. plz change ^^
-// exports.apikey = '970870d0cc0342f1e96290b3fba537ca';
+// example apikey. wont work. plz change ^^
+exports.apikey = '970870d0cc0342f1e96290b3fba537ca';
+
+// port to listen on for incoming contest API requests
+exports.port = 1239;
+
+
