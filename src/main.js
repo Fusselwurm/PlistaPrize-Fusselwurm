@@ -66,7 +66,7 @@ var
 			lvl = 'debug';
 		}
 		log.getLogger('main.' + lname)[lvl](reasonphrase);
-		response.writeHead(status, error, {
+		response.writeHead(statuscode, error, {
 			'Content-Type':'application/json',
 			'Content-Length':responseBody.length
 		});
