@@ -1,7 +1,7 @@
 var itemStorage,
 	logger = require(__dirname + '/log.js').getLogger('recommender');
 
-logger.setLevel('warn');
+logger.setLevel('info');
 
 /**
  * required

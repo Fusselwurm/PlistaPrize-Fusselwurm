@@ -50,6 +50,7 @@ var
 	};
 
 log.setOutfile('/tmp/plistaprize.log');
+logger.setLevel('debug');
 
 if (!config.apikey) {
 	logger.fatal('missing apikey. please set the API key from within config.js (example: exports.apikey = "blah"; )');
@@ -66,7 +67,7 @@ itemstorage.setLog(log);
 http.createServer(
 	function (request, response) {
 
-		var error, status = 200, reqBody = '', responseBody;
+		var error, status = 200, reqBody = '', responseBody, time = new Date();
 
 		if (request.method !== 'GET' && request.method !== 'POST') {
 			error = 'm' + new Array(Math.floor(Math.random() * 40)).join('o');
@@ -156,6 +157,7 @@ http.createServer(
 										user,
 										requestObj.item ? requestObj.item.id : null,
 										requestObj.config.limit, function (err, items) {
+											var s;
 											items.map(function (item) {
 												return {
 													id: item.id
@@ -174,7 +176,8 @@ http.createServer(
 												user.sees(i.id);
 											});
 
-											logger.trace('recommending items ' + responseObj.items.map(
+											s = new Date();
+											logger.debug('needed ' + Math.floor(s.getTime() - time.getTime()) + ' ms to recommend items ' + responseObj.items.map(
 												function (i) {
 													return i.id;
 												}).join(','));
