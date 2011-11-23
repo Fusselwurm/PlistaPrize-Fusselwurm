@@ -5,22 +5,20 @@
  *
  * with the most ridiculous algorithm, I guess
  *
- *
- * items are just plain objects right now, as is everything else.
- *
  */
 
 var
-	http = require('http'),
-	version = '1.0', // current contest API version ^^
+	contestApiVersion = '1.0',
 	config = require(__dirname + '/config.js'),
+	http = require('http'),
+	redis = require('redis'),
 	itemstorage = require(__dirname + '/lib/itemstorage.js'),
 	recommender = require(__dirname + '/lib/recommender.js'),
 	users = require(__dirname + '/lib/users.js'),
 	log = require(__dirname + '/lib/log.js'),
 	logger = log.getLogger('main'),
-	redis = require('redis'),
-	cleanup = function () {
+
+	shutdown = function () {
 		var request = http.request({
 				method: 'POST',
 				hostname: 'contest.plista.com',
@@ -47,9 +45,35 @@ var
 		});
 		process.exit(0);
 
+	},
+	endResponse = function (response, statuscode, reasonphrase, responseObj) {
+		var responseBody = JSON.stringify(responseObj || {
+				error: reasonphrase,
+				code: statuscode,
+				version: contestApiVersion
+			}),
+			lname = 'defalt',
+			lvl = 'info';
+
+		if (statuscode >= 500) {
+			lname = 'myError';
+			lvl = 'error';
+		} else if (statuscode >= 400) {
+			lname = 'clientError';
+			lvl = 'warn';
+		} else if (statuscode >= 200) {
+			lname = 'success';
+			lvl = 'debug';
+		}
+		log.getLogger('main.' + lname)[lvl](reasonphrase);
+		response.writeHead(status, error, {
+			'Content-Type':'application/json',
+			'Content-Length':responseBody.length
+		});
+		response.end(responseBody);
 	};
 
-log.setOutfile('/tmp/plistaprize.log');
+log.setOutfile(config.logfile || '/tmp/plistaprize.log');
 logger.setLevel('debug');
 
 if (!config.apikey) {
@@ -64,30 +88,28 @@ itemstorage.setRedis(redis);
 itemstorage.setLog(log);
 
 
-http.createServer(
-	function (request, response) {
+http.createServer(function (request, response) {
 
-		var error, status = 200, reqBody = '', responseBody, time = new Date();
+		var status = 200, reqBody = '', responseBody, time = new Date();
 
 		if (request.method !== 'GET' && request.method !== 'POST') {
-			error = 'm' + new Array(Math.floor(Math.random() * 40)).join('o');
+			endResponse(response, 400, 'm' + new Array(Math.floor(Math.random() * 40)).join('o'));
+			return;
 		}
 
 		request.on("data", function (chunk) {
 			reqBody += chunk;
 		});
 
-		request.on("end",
-			function () {
+		request.on("end", function () {
 
-				var requestObj, responseObj, teamID, user, contentType;
+				var requestObj, responseObj, contentType;
 
 				try {
 
 					if (!reqBody) {
-						status = 400;
-						error = 'POST data is empty';
-
+						endResponse(response, 400, 'POST data is empty');
+						return;
 					} else {
 						try {
 							contentType = request.headers["content-type"];
@@ -98,30 +120,12 @@ http.createServer(
 							requestObj = JSON.parse(reqBody);
 							status = 200;
 						} catch (e) {
-							error = 'POST data is not valid JSON: ' + (e.message || e) + ':' + reqBody;
-							status = 400;
+							endResponse(response, 400, 'POST data is not valid JSON: ' + (e.message || e) + ':' + reqBody);
+							return;
 						}
 
 					}
 
-					if (!error) {
-						teamID = requestObj.config && requestObj.config.team ? requestObj.config.team.id : 0;
-					}
-
-					if (error) {
-						logger.warn('error: ' + error);
-						responseBody = JSON.stringify({
-							error:error,
-							code:0,
-							version:version
-						}) || '';
-						response.writeHead(status, {
-							'Content-Type':'application/json',
-							'Content-Length':responseBody.length
-						});
-						response.end(responseBody);
-						return;
-					}
 
 					// workaround until the contest API has been fixed
 					if (requestObj.error) {
@@ -130,7 +134,6 @@ http.createServer(
 
 					switch (requestObj.msg) {
 						case 'feedback':
-							responseObj = null;
 							try {
 								if (requestObj.config.team.id) {
 									log.getLogger('main.interesting').info('I got a response :) ' + JSON.stringify(requestObj));
@@ -139,7 +142,8 @@ http.createServer(
 								log.getLogger('main.interesting').info('someone else got a response :( ');
 							}
 
-							break;
+							endResponse(response, 200, '');
+							return;
 						case 'impression':
 
 							if (requestObj.item) {
@@ -147,7 +151,7 @@ http.createServer(
 								itemstorage.addItemVisited(requestObj.item);
 							}
 
-							user = users.getUser(requestObj.client.id, function (err, user) {
+							users.getUser(requestObj.client.id, function (err, user) {
 
 								if (user) {
 									user.visits(requestObj.item);
@@ -166,10 +170,10 @@ http.createServer(
 											responseObj = {
 												msg: "result",
 												team: {
-													id: teamID
+													id: requestObj.config && requestObj.config.team ? requestObj.config.team.id : 0
 												},
 												items: items,
-												version: version
+												version: contestApiVersion
 											};
 
 											responseObj.items.forEach(function (i) {
@@ -193,35 +197,19 @@ http.createServer(
 								}
 							});
 							return;
-							break;
 
 						case
 						'error' :
-							logger.warn('received "error" request: ' + requestObj.code + '( ' + requestObj.error + ' )');
-							break;
+							endResponse(response, 200, 'received "error" request: ' + requestObj.code + '( ' + requestObj.error + ' )');
+							return;
 						default:
-							logger.warn('strange request: ' + requestObj.msg);
-							error = 'Erm... yes. I dont really know what you want with "' + requestObj.msg + '", so Im just going to ignore you';
-							status = 400;
+							endResponse(response, 400, 'Erm... yes. I dont really know what you want with "' + requestObj.msg + '", so Im just going to ignore you');
+							return;
 					}
 				} catch (f) {
-					logger.error('exception in request.end: ' + f.message/* + '\n' + f.stack*/); // FIXME where do the exceptions come from.. grr..
-					error = 'internal server error, meh';
-					status = 500;
+					endResponse(500, 'exception in request.end: ' + f.message + '\n' + f.stack);
 				}
-
-				responseBody = JSON.stringify(responseObj) || '';
-				response.writeHead(status, {
-					'Content-Type':'application/json',
-					'Content-Length':responseBody.length
-				});
-				response.end(responseBody);
-
-
-			}
-		)
-		;
-
+		});
 	}).listen(config.port);
 
 logger.info('server listening at port ' + config.port);
@@ -263,5 +251,5 @@ logger.info("sending start request to API server...");
 }());
 
 
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

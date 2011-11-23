@@ -6,12 +6,12 @@ app.setRedis(redis);
 app.setLog({
     getLogger: function () {
         return {
-            trace: function () {},
-            debug: function () {},
-            info: function () {},
-            warn: function () {},
-            error: function () {},
-            fatal: function () {}
+            trace: function (msg) {},
+            debug: function (msg) {},
+            info: function (msg) {},
+            warn: function (msg) {},
+            error: function (msg) {},
+            fatal: function (msg) {}
         };
     }
 });
