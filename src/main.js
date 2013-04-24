@@ -17,13 +17,18 @@ var
 	users = require(__dirname + '/lib/users.js'),
 	log = require(__dirname + '/lib/log.js'),
 	logger = log.getLogger('main'),
-
+	halt = function () {
+		logger.info('exiting...');
+		process.exit(0);
+	},
 	shutdown = function () {
 		var request = http.request({
 				method: 'POST',
 				hostname: 'contest.plista.com',
 				path:'/api/api.php'
 			}, function () {});
+
+		logger.info("sending stop request to API server...");
 
 		request.write(JSON.stringify({
 			version:"1.0",
@@ -41,9 +46,10 @@ var
 			});
 			resp.on('end', function () {
 				logger[lvl]('response: ' + resp.statusCode + ': ' + body);
+				halt();
 			});
 		});
-		process.exit(0);
+
 
 	},
 	endResponse = function (response, statuscode, reasonphrase, responseObj) {
@@ -252,4 +258,6 @@ logger.info("sending start request to API server...");
 
 
 process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGTERM', function () {
+	process.exit(1);
+});
