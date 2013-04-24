@@ -1,6 +1,29 @@
 var
 	redis,
-	logger;
+	logger,
+	redisKeys = {
+		allByDomainid: function (domainid) {
+			return 'item:' + domainid + ':ids';
+		},
+		all: function () {
+			return 'item:ids';
+		},
+		recommendables: function () {
+			return 'items:recommendables';
+		},
+		byItemid: function (id) {
+			return 'item_' + id;
+		},
+		mostvisited: function () {
+			return 'items:most-visited';
+		},
+		visitsByID: function (id) {
+			return 'item:visited_' + id;
+		},
+		createdByID: function (id) {
+			return 'item:created-at_' + id;
+		}
+	};
 
 exports.setRedis = function (o) {
 	redis = o.createClient();
@@ -13,15 +36,16 @@ exports.setLog = function (o) {
 };
 
 
-exports.addItem = function (item, fn) {
+exports.addItem = function (item, domain, fn) {
 	var id = item.id;
-	redis.sadd('item:ids', id);
+	redis.sadd(redisKeys.all, id);
+	redis.sadd(redisAllByDomainid(domain.id, id);
 	if (item.recommendable) {
-		redis.sadd('items:recommendables', id);
+		redis.sadd(redisKeys.recommendables(), id);
 	}
-	redis.set('item:created-at_' + id, item.created || item.created_at || item.date);
+	redis.set(redisKeys.createdByID(id), item.created || item.created_at || item.date);
 
-	redis.hmset('item_' + id, item, fn);
+	redis.hmset(redisKeys.byItemid(id), item, fn);
 };
 
 exports.getItem = function (id, fn) {
@@ -34,8 +58,8 @@ exports.getItem = function (id, fn) {
  * @param number
  * @return Array
  */
-exports.getLatestIDs = function (number, fn) {
-	redis.zrange('items:most-visited', -20, -1, function (err, data) {
+exports.getLatestIDs = function (number, domainid, fn) {
+	redis.zrange(redisKeys.mostvisited(), -20, -1, function (err, data) {
 		data = data || [];
 		if (err) {
 			logger.error('error when getting sorted items: ' + err);
@@ -48,7 +72,7 @@ exports.getLatestIDs = function (number, fn) {
 };
 
 exports.addItemVisited = function (item) {
-	redis.incr('item:visited_' + item.id);
+	redis.incr(redisKeys.visitsByID(item.id));
 };
 
 
@@ -70,8 +94,7 @@ exports.calculate = (function () {
 		 *	ZADD('items:most-visited', score, itemid);
 		 *
 		 **/
-
-		redis.smembers('items:recommendables', function (err, ids) {
+		redis.smembers(redisKeys.recommendables(), function (err, ids) {
 			var
 				t = Math.floor((new Date()).getTime() / 1000),
 				nTodo;
@@ -108,7 +131,7 @@ exports.calculate = (function () {
 
 
 						logger.debug('setting visited score for item ' + id + ' to ' + score);
-						redis.zadd('items:most-visited', score, id);
+						redis.zadd(redisKeys.mostvisited(), score, id);
 						nTodo -= 1;
 						if (!nTodo) {
 							logger.trace('finished most-visited calculation round');
@@ -116,11 +139,11 @@ exports.calculate = (function () {
 						}
 					};
 
-				redis.get('item:created-at' + id, function (err, val) {
+				redis.get(redisKeys.createdByID(id), function (err, val) {
 					created_at = val;
 					trySetScore();
 				});
-				redis.get('item:visited_' + id, function (err, val) {
+				redis.get(redisKeys.visitsByID(id), function (err, val) {
 					visitcount = val;
 					trySetScore();
 				});

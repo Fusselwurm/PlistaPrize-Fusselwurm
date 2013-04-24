@@ -13,7 +13,7 @@ var
 	http = require('http'),
 	redis = require('redis'),
 	itemstorage = require(__dirname + '/lib/itemstorage.js'),
-	recommender = require(__dirname + '/lib/recommender.js'),
+	recommenderFactory = require(__dirname + '/lib/recommender.js'),
 	users = require(__dirname + '/lib/users.js'),
 	log = require(__dirname + '/lib/log.js'),
 	logger = log.getLogger('main'),
@@ -109,7 +109,7 @@ http.createServer(function (request, response) {
 
 		request.on("end", function () {
 
-				var requestObj, responseObj, contentType;
+				var requestObj, responseObj, contentType, recommender;
 
 				try {
 
@@ -163,10 +163,12 @@ http.createServer(function (request, response) {
 									user.visits(requestObj.item);
 								}
 								if (requestObj.config.recommend) {
-									recommender.getRecommendations(
-										user,
-										requestObj.item ? requestObj.item.id : null,
-										requestObj.config.limit, function (err, items) {
+									recommender = recommenderFactory.
+										recommender(user, requestObj.item ? requestObj.item.id : null).
+										setDomain(requestObj.domain).
+										setCount(requestObj.config.limit);
+
+									recommender.getRecommendations(function (err, items) {
 											var s;
 											items.map(function (item) {
 												return {
@@ -194,8 +196,8 @@ http.createServer(function (request, response) {
 
 											responseBody = JSON.stringify(responseObj) || '';
 											response.writeHead(status, {
-												'Content-Type':'application/json',
-												'Content-Length':responseBody.length
+												'Content-Type': 'application/json',
+												'Content-Length': responseBody.length
 											});
 											response.end(responseBody);
 
@@ -221,7 +223,7 @@ http.createServer(function (request, response) {
 logger.info('server listening at port ' + config.port);
 
 
-recommender.setItemStorage(itemstorage);
+recommenderFactory.setItemStorage(itemstorage);
 logger.info('initial item score calculation...');
 itemstorage.calculate();
 logger.info('...finished.');
