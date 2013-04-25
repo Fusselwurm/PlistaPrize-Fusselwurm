@@ -52,7 +52,8 @@ exports.setLog = function (o) {
 exports.addItem = function (item, domain) {
 	var
 		itemid = item.id,
-		domainid = domain.id;
+		domainid = domain.id,
+		dateCreated = item.created || item.created_at || item.date;
 
 	redis.sadd(redisKeys.itemids(), itemid, redis.print);
 	redis.sadd(redisKeys.domainids(), domainid, redis.print);
@@ -60,8 +61,10 @@ exports.addItem = function (item, domain) {
 	if (item.recommendable) {
 		redis.sadd(redisKeys.recommendablesByDomainid(domainid), itemid, redis.print);
 	}
-	redis.set(redisKeys.createdByID(itemid), item.created || item.created_at || item.date || '', redis.print);
-	redis.set(redisKeys.byItemid(itemid), JSON.stringify(item) || '', redis.print);
+	if (dateCreated) {
+		redis.set(redisKeys.createdByID(itemid), dateCreated, redis.print);
+	}
+	//redis.set(redisKeys.byItemid(itemid), JSON.stringify(item) || '', redis.print);
 };
 
 exports.getItem = function (id, fn) {
@@ -69,7 +72,6 @@ exports.getItem = function (id, fn) {
 		fn(data ? JSON.parse(data) : null);
 	});
 };
-
 
 /**
  *
