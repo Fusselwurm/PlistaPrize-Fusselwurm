@@ -215,7 +215,7 @@ http.createServer(function (request, response) {
 							return;
 					}
 				} catch (f) {
-					endResponse(500, 'exception in request.end: ' + f.message + '\n' + f.stack);
+					endResponse(response, 500, 'exception in request.end: ' + f.message + '\n' + f.stack);
 				}
 		});
 	}).listen(config.port);
@@ -224,9 +224,8 @@ logger.info('server listening at port ' + config.port);
 
 
 recommenderFactory.setItemStorage(itemstorage);
-logger.info('initial item score calculation...');
+logger.info('starting initial item score calculation...');
 itemstorage.calculate();
-logger.info('...finished.');
 setInterval(itemstorage.calculate, 60000);
 
 logger.info("sending start request to API server...");
