@@ -60,8 +60,8 @@ exports.addItem = function (item, domain) {
 	if (item.recommendable) {
 		redis.sadd(redisKeys.recommendablesByDomainid(domainid), itemid, redis.print);
 	}
-	redis.set(redisKeys.createdByID(itemid), item.created || item.created_at || item.date, redis.print);
-	redis.set(redisKeys.byItemid(itemid), JSON.stringify(item), redis.print);
+	redis.set(redisKeys.createdByID(itemid), item.created || item.created_at || item.date || '', redis.print);
+	redis.set(redisKeys.byItemid(itemid), JSON.stringify(item) || '', redis.print);
 };
 
 exports.getItem = function (id, fn) {
