@@ -5,17 +5,20 @@ var
 		allByDomainid: function (domainid) {
 			return 'item:' + domainid + ':ids';
 		},
-		all: function () {
+		itemids: function () {
 			return 'item:ids';
 		},
-		recommendables: function () {
-			return 'items:recommendables';
+		domainids: function () {
+			return 'domainids';
+		},
+		recommendablesByDomainid: function (domainids) {
+			return 'items:recommendables:domainid_' + domainids;
 		},
 		byItemid: function (id) {
 			return 'item_' + id;
 		},
-		mostvisited: function () {
-			return 'items:most-visited';
+		mostvisitedByDomainid: function (domainid) {
+			return 'items:mostvisited:domainid_' + domainid;
 		},
 		visitsByID: function (id) {
 			return 'item:visited_' + id;
@@ -23,6 +26,16 @@ var
 		createdByID: function (id) {
 			return 'item:created-at_' + id;
 		}
+	},
+	getAllDomainids = function (fn) {
+		redis.smembers(redisKeys.domainids(), function (err, data) {
+			if (err) {
+				throw new Error(err);
+			}
+			if (Array.isArray(data)) {
+				fn(data);
+			}
+		});
 	};
 
 exports.setRedis = function (o) {
@@ -32,24 +45,29 @@ exports.setRedis = function (o) {
 
 exports.setLog = function (o) {
 	logger = o.getLogger('itemstorage');
-	logger.setLevel('warn');
+	logger.setLevel('debug');
 };
 
 
-exports.addItem = function (item, domain, fn) {
-	var id = item.id;
-	redis.sadd(redisKeys.all, id);
-	redis.sadd(redisAllByDomainid(domain.id, id);
-	if (item.recommendable) {
-		redis.sadd(redisKeys.recommendables(), id);
-	}
-	redis.set(redisKeys.createdByID(id), item.created || item.created_at || item.date);
+exports.addItem = function (item, domain) {
+	var
+		itemid = item.id,
+		domainid = domain.id;
 
-	redis.hmset(redisKeys.byItemid(id), item, fn);
+	redis.sadd(redisKeys.itemids(), itemid, redis.print);
+	redis.sadd(redisKeys.domainids(), domainid, redis.print);
+	redis.sadd(redisKeys.allByDomainid(domain.id), itemid, redis.print);
+	if (item.recommendable) {
+		redis.sadd(redisKeys.recommendablesByDomainid(domainid), itemid, redis.print);
+	}
+	redis.set(redisKeys.createdByID(itemid), item.created || item.created_at || item.date);
+	redis.set(redisKeys.byItemid(itemid), JSON.stringify(item), redis.print);
 };
 
 exports.getItem = function (id, fn) {
-	return redis.hgetall('item_' + id, fn);
+	return redis.get('item_' + id, function (data) {
+		fn(data ? JSON.parse(data) : null);
+	});
 };
 
 
@@ -59,7 +77,7 @@ exports.getItem = function (id, fn) {
  * @return Array
  */
 exports.getLatestIDs = function (number, domainid, fn) {
-	redis.zrange(redisKeys.mostvisited(), -20, -1, function (err, data) {
+	redis.zrange(redisKeys.mostvisitedByDomainid(domainid), -20, -1, function (err, data) {
 		data = data || [];
 		if (err) {
 			logger.error('error when getting sorted items: ' + err);
@@ -77,14 +95,24 @@ exports.addItemVisited = function (item) {
 
 
 exports.calculate = (function () {
-	var running = false;
+	var running = 0,
+		dec = function () {
+			running -= 1;
+			if (running < 1) {
+				logger.info('finished most-visited calculation round');
+			}
+		},
+		incrBy = function (cnt) {
+			running += cnt;
+		};
 	return function () {
-		if (running) {
-			logger.info('aborting most visited calculation, its still running');
+		if (running > 0) {
+			logger.info('not starting most visited calculation, its still running');
 			return;
 		}
 		logger.info('starting most visited calculation');
-		running = true;
+
+
 		// iteriere die liste der gesehenen items, und ermittele das "visited pro zeiteinheit"
 		// d.h. über alle 'item:visited_' und teile durch das entsprechende item:created_ - Alter
 		// und speichere in sorted set
@@ -94,66 +122,78 @@ exports.calculate = (function () {
 		 *	ZADD('items:most-visited', score, itemid);
 		 *
 		 **/
-		redis.smembers(redisKeys.recommendables(), function (err, ids) {
-			var
-				t = Math.floor((new Date()).getTime() / 1000),
-				nTodo;
+		incrBy(1);
+		getAllDomainids(function (domainids) {
+			logger.debug('most visited calculation for ' + domainids.length + ' domains');
+			incrBy(domainids.length);
+			domainids.forEach(function (domainid) {
+				logger.debug('triggering most visited calculation for domain ' + domainid + '…');
 
-			if (err) {
-				logger.error('error when getting item ids: ' + err);
-			}
+				incrBy(1);
+				redis.smembers(redisKeys.recommendablesByDomainid(domainid), function (err, ids) {
+					var
+						t = Math.floor((new Date()).getTime() / 1000),
+						nTodo;
 
-			ids = ids || [];
-			nTodo = ids.length;
+					if (err) {
+						logger.error('error when getting item ids: ' + err);
+						return;
+					}
 
-			logger.debug('found ' + nTodo + ' ids for which to calculate mostvisited');
+					ids = ids || [];
+					nTodo = ids.length;
 
-			ids.forEach(function (id) {
+					logger.debug('found ' + nTodo + ' ids in domain ' + domainid + ' for which to calculate mostvisited');
 
-				var
-					created_at,
-					visitcount,
-					trySetScore = function () {
-						var score, dAge;
+					incrBy(nTodo);
+					dec();
+					ids.forEach(function (id) {
+
+						var
+							both = 0,
+							created_at,
+							visitcount,
+							trySetScore = function () {
+								var score, dAge;
+
+								if (both < 2) {
+									return;
+								}
+
+								if (typeof created_at === 'undefined' || typeof visitcount === 'undefined') {
+									logger.warn('trySetScore miss (' + created_at + ', ' + visitcount);
+									dec();
+									return;
+								}
+
+								dAge = (t - created_at) / 86400;
+								if (dAge) {
+									score = visitcount / (dAge * dAge);
+								} else {
+									score = 1;
+								}
 
 
-						if (typeof created_at === 'undefined' || typeof visitcount === 'undefined') {
-							logger.trace('trySetScore miss (' + created_at + ', ' + visitcount);
-							return;
-						}
+								logger.trace('setting visited score for item ' + id + ' to ' + score);
+								redis.zadd(redisKeys.mostvisitedByDomainid(domainid), score, id);
+								dec();
+							};
 
-						dAge = (t - created_at) / 86400;
-						if (dAge) {
-							score = visitcount / (dAge * dAge);
-						} else {
-							score = 1;
-						}
-
-
-						logger.debug('setting visited score for item ' + id + ' to ' + score);
-						redis.zadd(redisKeys.mostvisited(), score, id);
-						nTodo -= 1;
-						if (!nTodo) {
-							logger.trace('finished most-visited calculation round');
-							running = false;
-						}
-					};
-
-				redis.get(redisKeys.createdByID(id), function (err, val) {
-					created_at = val;
-					trySetScore();
+						redis.get(redisKeys.createdByID(id), function (err, val) {
+							created_at = val;
+							both += 1;
+							trySetScore();
+						});
+						redis.get(redisKeys.visitsByID(id), function (err, val) {
+							visitcount = val;
+							both += 1;
+							trySetScore();
+						});
+					});
 				});
-				redis.get(redisKeys.visitsByID(id), function (err, val) {
-					visitcount = val;
-					trySetScore();
-				});
+				dec();
 			});
-
-			if (!nTodo) {
-				logger.trace('finished most-visited calculation round');
-				running = false;
-			}
+			dec();
 		});
-
 	};
 }());

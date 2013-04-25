@@ -153,7 +153,7 @@ http.createServer(function (request, response) {
 						case 'impression':
 
 							if (requestObj.item) {
-								itemstorage.addItem(requestObj.item);
+								itemstorage.addItem(requestObj.item, requestObj.domain);
 								itemstorage.addItemVisited(requestObj.item);
 							}
 
