@@ -67,6 +67,7 @@ var
 				fn(err, recs);
 			});
 		};
+		return that;
 	};
 
 logger.setLevel('info');
